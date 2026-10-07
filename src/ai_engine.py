@@ -9,12 +9,6 @@ def calculate_manhattan_distance(state):
     menuju GOAL_STATE.
 
     Blank tile (0) tidak dihitung.
-
-    Args:
-        state (tuple): State puzzle 8-Puzzle.
-
-    Returns:
-        int: Nilai Manhattan Distance.
     """
     distance = 0
 
@@ -40,48 +34,38 @@ def a_star_search(initial_state):
     Mencari jalur optimal dari initial_state menuju GOAL_STATE
     menggunakan algoritma A*.
 
-    Rumus:
-        f(n) = g(n) + h(n)
-
-    Args:
-        initial_state (tuple): State awal puzzle.
+    f(n) = g(n) + h(n)
 
     Returns:
         list: Jalur state dari initial_state sampai GOAL_STATE.
-        None: Jika solusi tidak ditemukan.
+              Jika tidak ditemukan, mengembalikan None.
     """
 
-    # Jika state awal sudah merupakan goal.
     if initial_state == GOAL_STATE:
         return [initial_state]
 
-    # Priority Queue.
-    # Format:
+    # Priority Queue:
     # (f_score, counter, state)
     open_list = []
 
     # Counter digunakan sebagai tie-breaker ketika
-    # terdapat state dengan f_score yang sama.
+    # dua state memiliki f_score yang sama.
     counter = 0
 
-    # g_score menyimpan cost dari initial state
-    # menuju setiap state.
-    g_score = {
-        initial_state: 0
-    }
+    # g_score menyimpan biaya dari initial state
+    # menuju state tertentu.
+    g_score = {initial_state: 0}
 
-    # Menyimpan parent setiap state untuk
-    # melakukan rekonstruksi path.
+    # Menyimpan parent setiap state untuk membangun kembali path.
     came_from = {}
 
-    # Closed List menyimpan state yang sudah diproses.
+    # Closed List
     closed_list = set()
 
-    # Heuristic state awal.
+    # Heuristic initial state
     initial_h = calculate_manhattan_distance(initial_state)
 
-    # g(initial_state) = 0
-    # sehingga f(initial_state) = 0 + h(initial_state)
+    # f(n) = g(n) + h(n)
     initial_f = initial_h
 
     heapq.heappush(
@@ -91,15 +75,14 @@ def a_star_search(initial_state):
 
     while open_list:
 
-        # Mengambil state dengan f_score terkecil.
+        # Ambil state dengan f(n) terkecil
         _, _, current_state = heapq.heappop(open_list)
 
-        # Jika state sudah diproses sebelumnya,
-        # jangan diproses kembali.
+        # Jika state sudah pernah diproses, lewati
         if current_state in closed_list:
             continue
 
-        # Jika mencapai goal, rekonstruksi path.
+        # Jika sudah mencapai goal
         if current_state == GOAL_STATE:
             path = [current_state]
 
@@ -110,25 +93,23 @@ def a_star_search(initial_state):
             path.reverse()
             return path
 
-        # Tandai state sebagai sudah diproses.
+        # Masukkan state ke Closed List
         closed_list.add(current_state)
 
-        # get_neighbors() mengembalikan:
-        # (move, neighbor_state)
+        # Ambil semua state tetangga
         neighbors = get_neighbors(current_state)
 
-        for _, neighbor in neighbors:
-
-            # Jangan memproses state yang sudah berada
-            # di Closed List.
+        for direction, neighbor in neighbors:
+            
+            # Jangan memproses state yang sudah selesai
             if neighbor in closed_list:
                 continue
 
-            # Setiap perpindahan tile memiliki cost 1.
+            # Biaya menuju neighbor
             tentative_g = g_score[current_state] + 1
 
-            # Jika neighbor belum ditemukan sebelumnya
-            # atau ditemukan jalur yang lebih murah.
+            # Jika neighbor belum pernah ditemukan
+            # atau ditemukan jalur yang lebih murah
             if (
                 neighbor not in g_score
                 or tentative_g < g_score[neighbor]
@@ -136,10 +117,7 @@ def a_star_search(initial_state):
                 came_from[neighbor] = current_state
                 g_score[neighbor] = tentative_g
 
-                # h(n) = Manhattan Distance.
                 h_score = calculate_manhattan_distance(neighbor)
-
-                # f(n) = g(n) + h(n).
                 f_score = tentative_g + h_score
 
                 counter += 1
@@ -149,7 +127,7 @@ def a_star_search(initial_state):
                     (f_score, counter, neighbor)
                 )
 
-    # Tidak ditemukan solusi.
+    # Tidak ditemukan solusi
     return None
 
 
@@ -157,39 +135,14 @@ def get_hint(state):
     """
     Mengambil satu langkah terbaik dari state saat ini.
 
-    A* digunakan untuk mencari path optimal.
-    Hint yang dikembalikan adalah arah gerakan pertama.
-
-    Args:
-        state (tuple): State puzzle saat ini.
-
     Returns:
-        str: Arah gerakan terbaik:
-             "Up", "Down", "Left", atau "Right".
-        None: Jika state sudah goal atau solusi tidak ditemukan.
+        tuple: State berikutnya yang merupakan langkah optimal.
+        None: Jika tidak ditemukan solusi atau state sudah goal.
     """
 
-    # Cari path optimal menggunakan A*.
     path = a_star_search(state)
 
-    # Jika tidak ada solusi atau state sudah goal.
     if path is None or len(path) < 2:
         return None
 
-    # State pertama = state saat ini.
-    current_state = path[0]
-
-    # State kedua = state hasil langkah optimal pertama.
-    next_state = path[1]
-
-    # Cari semua kemungkinan gerakan dari state saat ini.
-    neighbors = get_neighbors(current_state)
-
-    # Cari arah yang menghasilkan next_state.
-    for move, neighbor in neighbors:
-        if neighbor == next_state:
-            return move
-
-    # Seharusnya tidak terjadi jika get_neighbors()
-    # bekerja dengan benar.
-    return None
+    return path[1]
